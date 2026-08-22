@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import TrasnformerBlock
+from TransformerBlock import TrasnformerBlock
 import model_config
 
 
@@ -28,7 +28,7 @@ class BaatLLM(nn.Module):
         batch_size,seq_len=tokens.shape
 
         #adding emb vector + pos emb
-        positions=torch.arrange(0,seq_len,dtype=torch.long ,device=tokens.device)
+        positions=torch.arange(0,seq_len,dtype=torch.long ,device=tokens.device)
         x=self.tok_emb(tokens)+self.pos_emb(positions)
         x=self.drop(x)
 

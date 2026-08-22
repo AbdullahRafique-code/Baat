@@ -33,7 +33,7 @@ class TransformerBlock(nn.Module):
         # norm1
         norm_x=self.ln1(x)
 
-        attn_out=self.attn(norm_x,norm_x,norm_x,is_casual=True,attn_mask=casual_mask)[0]
+        attn_out=self.attn(norm_x,norm_x,norm_x,is_causal=True,attn_mask=casual_mask)[0]
         #shortcut
         x=x+attn_out
 
