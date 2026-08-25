@@ -19,7 +19,7 @@ def valid_text(iterator,key):
 def prepare_dataset():
     print("Loading //.")
     tokenizer=Tokenizer.from_file("tokenizer.json")
-    eot_tokeninzer=tokenizer.token_to_id("[endoftext]")
+    eot_token=tokenizer.token_to_id("[endoftext]")
 
     urdu_iter=iter(load_dataset("allenai/c4", "ur", split="train", streaming=True))
     rom_iter=iter(load_dataset("Khubaib01/RomanUrdu-NLP-Sentiment-Corpus", split="train", streaming=True))

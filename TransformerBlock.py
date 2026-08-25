@@ -1,7 +1,6 @@
-import torch
 import torch.nn as nn
 import model_config
-
+from MultiAttentionHead import MultiAttentionHead
 
 
 class TransformerBlock(nn.Module):
@@ -11,8 +10,10 @@ class TransformerBlock(nn.Module):
         #layerNorm
         self.ln1=nn.LayerNorm(config.dim) #768
 
-        # using Python's Built in MHA
-        self.attn=nn.MultiheadAttention(embed_dim=config.dim,num_heads=config.num_heads,batch_first=True)
+        # using our own custom MultiAttentionHead
+        self.attn=MultiAttentionHead(dim_in=config.dim,dim_out=config.dim,
+                                    context_length=config.context_length,dropout=config.dropout,
+                                    num_heads=config.num_heads)
 
         #LayerNorm again
         self.ln2=nn.LayerNorm(config.dim)

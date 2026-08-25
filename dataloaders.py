@@ -16,7 +16,7 @@ class BaatDataset(Dataset):
 
     def __getitem__(self,idx):
         start=idx *self.seq_len
-         end=start+self.seq_len+1
+        end=start+self.seq_len+1
     
         chunk=torch.from_numpy(self.data[start:end].astype(np.int64))
 

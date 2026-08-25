@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from TransformerBlock import TrasnformerBlock
+from TransformerBlock import TransformerBlock
 import model_config
 
 
