@@ -3,7 +3,7 @@ import time
 from datasets import load_dataset
 from tokenizers import Tokenizer
 
-# reusing the clean None fixer function
+# reusing the clean "None" val error fixer function
 def valid_text(iterator,key):
     while True:
         try:
@@ -14,6 +14,50 @@ def valid_text(iterator,key):
         except StopIteration:
             return None
 
+# val and training split
+def write_tokens_to_bin(filename,target_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token):
+    tokens_written =0
+    start_time=time.time()
+    
+    print("starting the process for {filename} ")
+        
+    with open (filename,"wb") as f:
+        while tokens_written<target_tokens:
+            chunk_tokens=[]
+    
+            #70% Formal urdu
+            for _ in range(70):
+                text=valid_text(urdu_iter,"text")
+                if text:
+                    chunk_tokens.extend(tokenizer.encode(text).ids)
+                    chunk_tokens.append(eot_token)
+    
+            #15% Roman Urdu
+            for _ in range(15):
+                text=valid_text(rom_iter,"message")
+                if text:
+                    chunk_tokens.extend(tokenizer.encode(text).ids)
+                    chunk_tokens.append(eot_token)
+                        
+            #15% English
+            for _ in range(15):
+                text=valid_text(eng_iter,"text")
+                if text:
+                    chunk_tokens.extend(tokenizer.encode(text).ids)
+                    chunk_tokens.append(eot_token)
+                
+            #writing to disc
+            np.array(chunk_tokens, dtype=np.uint16).tofile(f)
+            tokens_written+=len(chunk_tokens)
+    
+            #printing every 1M successfull pass
+            last_tok_written=0
+            if tokens_written-last_tok_written >= 1000000:
+                elapsed=time.time()-start_time
+                print(f"Progress update: {tokens_written/1000000:.1f}M out of 2B tokens.| Time elapsed {elapsed:.1f}s")
+                last_tok_written=tokens_written
+    
+            print(f"Data Prep completed for {filename}, Final Token count: {tokens_written}")
 
 # preparing the dataset
 def prepare_dataset():
@@ -26,45 +70,15 @@ def prepare_dataset():
     eng_iter=iter(load_dataset("HuggingFaceFW/fineweb-edu", name="CC-MAIN-2024-10", split="train", streaming=True))
 
     # gonig for 2B tokens because of the chinchilla Scaling Laws, as the arch is 110 approx so means 110Mx20=2B approx
-    target_tokens=2_000_000_000
-    tokens_written =0
-    start_time=time.time()
-
-    print("starting the process for 2B tokens in the bin file train.bin..")
-    
-    with open ("train.bin","wb") as f:
-        while tokens_written<target_tokens:
-            chunk_tokens=[]
-
-            #70% Formal urdu
-            for _ in range(70):
-                text=valid_text(urdu_iter,"text")
-                if text:
-                    chunk_tokens.extend(tokenizer.encode(text).ids)
-                    chunk_tokens.append(eot_token)
-
-            for _ in range(15):
-                text=valid_text(rom_iter,"message")
-                if text:
-                    chunk_tokens.extend(tokenizer.encode(text).ids)
-                    chunk_tokens.append(eot_token)
-                    
-            for _ in range(15):
-                text=valid_text(eng_iter,"text")
-                if text:
-                    chunk_tokens.extend(tokenizer.encode(text).ids)
-                    chunk_tokens.append(eot_token)
-            
-            #writing to disc
-            np.array(chunk_tokens, dtype=np.uint16).tofile(f)
-            tokens_written+=len(chunk_tokens)
-
-            #printing every 1M successfull pass
-            if tokens_written% 100000<50000:
-                elapsed=time.time()-start_time
-                print(f"Progress update: {tokens_written/100000:.1f}M out of 2B tokens.| Time elapsed {elapsed:.1f}s")
-                print(f"Data Prep completed! Final Token count: {tokens_written}")                
+    # split as 20 mil for val and 1.98B for actual training
+    # val for the first 20M
+    val_tokens=20_000_000
+    write_tokens_to_bin("val.bin",val_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
+    # training
+    train_tokens=1_980_000_000
+    write_tokens_to_bin("train.bin",train_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
+  
 
 
 if __name__=="__main__":
-    prepare_dataset()
+    prepare_dataset()   

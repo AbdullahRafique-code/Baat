@@ -5,7 +5,7 @@ from T_Block_Utils import LayerNorm,GELU,FeedForward
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, config:model_config):
+    def __init__(self, config:model_config.BaatConfig):
         super().__init__()
 
         #layerNorm
@@ -26,10 +26,7 @@ class TransformerBlock(nn.Module):
         self.drop_shortcut=nn.Dropout(config.dropout)
 
     def forward(self,x):
-        # masking the future tokens, using a mask
-        #seq_len=x.size(1)
-        #casual_mask=nn.Transformer.generate_square_subsequent_mask(seq_len).to(x.device)
-        
+        #attention
         shortcut=x
         x=self.ln1(x)
         x=self.attn(x)

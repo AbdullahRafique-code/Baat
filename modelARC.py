@@ -7,7 +7,7 @@ import model_config
 # Defining the main architecture
 
 class BaatLLM(nn.Module):
-    def __init__(self, config:model_config):
+    def __init__(self, config:model_config.BaatConfig):
         super().__init__()
         self.config=config
 

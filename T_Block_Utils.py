@@ -5,7 +5,7 @@ import torch.nn as nn
 import model_config
 
 class LayerNorm(nn.Module):
-    def __init__(self,config:model_config):
+    def __init__(self,config:model_config.BaatConfig):
         super().__init__()
         self.eps=1e-5 # to precvent division by zero
         self.scale=nn.Parameter(torch.ones(config.dim)) # learnable scale parameter
@@ -30,7 +30,7 @@ class GELU(nn.Module):
 # the MLP feedforward
 
 class FeedForward(nn.Module):
-    def __init__(self,config:model_config):
+    def __init__(self,config:model_config.BaatConfig):
         super().__init__()
         self.layers=nn.Sequential(nn.Linear(config.dim,4*config.dim),
                                   GELU(),
