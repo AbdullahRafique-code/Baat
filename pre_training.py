@@ -53,13 +53,14 @@ def train():
     except Exception as e:
         print(f"Model compilation failed: {e}")
 
-#optimizer
+    #optimizer
     optimizer=torch.optim.AdamW(
         model.parameters(),
         lr=max_lr,
-        weight_decay=0.1
+        weight_decay=0.1,
         betas=(0.9,0.95)
     )
+        
 
     train_loader=get_dataloader(bin_path="train.bin", 
                                 batch_size=batch_size, 
@@ -138,4 +139,3 @@ def train():
 
 if __name__=="__main__":
     train()
-    
