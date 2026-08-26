@@ -37,3 +37,105 @@ def get_lr(step):
     coefficient=0.5*(1.0+math.cos(math.pi*decay_ratio))
     return min_lr+coefficient*(max_lr-min_lr)
 
+# Hardware check and device selection
+def train():
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    os.makedirs(checkpoint_dir,exist_ok=True)
+    config=BaatConfig()
+    model=BaatLLM(config).to(device) # load model, pass config,move to device
+
+    # speeding up model with torch.compile (if available)
+    try:
+        model=torch.compile(model) # compile model for speedup
+        print("Model compiled successfully.")
+    except Exception as e:
+        print(f"Model compilation failed: {e}")
+
+#optimizer
+    optimizer=torch.optim.AdamW(
+        model.parameters(),
+        lr=max_lr,
+        weight_decay=0.1
+        betas=(0.9,0.95)
+    )
+
+    train_loader=get_dataloader(bin_path="train.bin", 
+                                batch_size=batch_size, 
+                                context_length=context_length,
+                                num_workers=4) # get dataloader
+    scalar=torch.cuda.amp.GradScaler(enabled=(device.type=="cuda")) # mixed precision training
+    model.train() # set model to training mode
+
+
+    step=0
+    start_time=time.time()
+
+    # the training loop
+    for x,y in train_loader:
+        if step>max_steps:
+            break
+
+        t0=time.time() # track time for each step
+
+        #setting the lr for step
+        lr=get_lr(step)
+        for param_group in optimizer.param_groups:
+            param_group["lr"]=lr
+
+        #move data to GPU, async transfer
+        x=x.to(device,non_blocking=True)
+        y=y.to(device,non_blocking=True)
+
+        #clear old gradients
+        optimizer.zero_grad(set_to_none=True)
+
+        #forward pass with mixed precision
+        with torch.autocast(device_type=device.type, dtype=torch.float16):
+            logits=model(x) # forward pass
+        # flat the tensor to match cross entropy loss form
+            loss=f.cross_entropy(logits.view(-1,config.vocab_size),y.view(-1)) 
+
+        #backward pass with gradient scaling
+        scalar.scale(loss).backward() 
+
+        #gradient clipping to prevent exploding gradients
+        scalar.unscale_(optimizer) # unscale gradients before clipping
+
+        #update wieghts
+        scalar.step(optimizer) # update weights
+        scalar.update() # ui[date] scalara
+
+        # metrics
+        torch.cuda.synchronize() # wait for GPU to finish
+        t1=time.time() # end time for step
+        dt=(t1-t0)*1000 # time taken for step in MS
+        tokens_per_sec=batch_size*context_length/(t1-t0) # tokens processed per second
+
+        if step%10==0:
+            print(f"Step: {step:05d}, Loss: {loss.item():.4f}, LR: {lr:.6f}, Time/Step: {dt:.2f}ms, Tokens/sec: {tokens_per_sec:.2f}")
+
+        # save checkpoint every 1000 steps
+        if step>0 and step%1000==0:
+            checkpoint_path=os.path.join(checkpoint_dir,f'baat_model_step_{step:05d}.pt')
+            torch.save({
+                'step': step,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss.item(),
+            },checkpoint_path)
+            print(f"saved checkpoint at step {step:05d} to {checkpoint_path}")
+
+        step+=1 # increment step
+
+    #saving final model after training
+    final_path="baat_model_final.pt"
+    torch.save(model.state_dict(),final_path)
+    print(f"Training completed. Final model saved to {final_path}")
+    print(f"Total training time: {(time.time()-start_time)/3600:.2f} hours")
+
+
+if __name__=="__main__":
+    train()
+    
