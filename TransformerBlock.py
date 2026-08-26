@@ -38,6 +38,7 @@ class TransformerBlock(nn.Module):
         x=x+shortcut
 
         #feedforward
+        shortcut=x
         x=self.ln2(x)
         x=self.mlp(x)
         x=self.drop_shortcut(x)

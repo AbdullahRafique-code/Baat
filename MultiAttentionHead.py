@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 class MultiAttentionHead(nn.Module):
-    def __init__(self, dim_in, dim_out,context_length,dropuout,num_heads,qkv_bias=False):
+    def __init__(self, dim_in, dim_out,context_length,dropout,num_heads,qkv_bias=False):
         super().__init__()
         assert(dim_out%num_heads==0),"dim_out must be divisible by num_heads"
         self.dim_out=dim_out
@@ -13,8 +13,8 @@ class MultiAttentionHead(nn.Module):
         self.W_key=nn.Linear(dim_in,dim_out,bias=qkv_bias)
         self.W_value=nn.Linear(dim_in,dim_out,bias=qkv_bias)
         self.out_proj=nn.Linear(dim_out,dim_out)
-        self.dropout=nn.Dropout(dropuout)
-        self.register_buffer("mask",torch.tril(torch.ones(context_length,context_length)).diagonal(1))
+        self.dropout=nn.Dropout(dropout)
+        self.register_buffer("mask",torch.tril(torch.ones(context_length,context_length)),diagonal=1)
 
     def forward(self,x):
         b,num_tokens,dim_in=x.shape
@@ -32,9 +32,10 @@ class MultiAttentionHead(nn.Module):
 
         mask_bool=self.mask.bool()[:num_tokens,:num_tokens] # mask turncates to num tokens at current elvel
 
-        atten_weights=attn_scores.masked_fill(mask_bool,-torch.inf)
+        atten_scores_masked=attn_scores.masked_fill(mask_bool,-torch.inf)
 
-        atten_weights=torch.softmax(attn_scores/keys.shape[-1]**0.5,dim=-1)
+        atten_weights=torch.softmax(atten_scores_masked/keys.shape[-1]**0.5,dim=-1)
+
         atten_weights=self.dropout(atten_weights)
 
         #context vector

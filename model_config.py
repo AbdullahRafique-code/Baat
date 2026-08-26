@@ -8,5 +8,5 @@ class BaatConfig:
     dim:int = 768
     num_layers:int =12
     num_heads:int =12
-    max_seq_len:int =1024
+    context_length:int =1024 #context length
     dropout:float =0.1

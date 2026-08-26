@@ -13,11 +13,11 @@ class BaatLLM(nn.Module):
 
         # tokens to embedding vectors + pos embeddings + dropout
         self.tok_emb=nn.Embedding(config.vocab_size,config.dim)
-        self.pos_emb=nn.Embedding(config.max_seq_len,config.dim)
+        self.pos_emb=nn.Embedding(config.context_length,config.dim)
         self.drop=nn.Dropout(config.dropout)
 
         # The 12 block stack
-        self.blocks=nn.Sequential(*[TrasnformerBlock(config) for _ in range(config.num_layers)])
+        self.blocks=nn.Sequential(*[TransformerBlock(config) for _ in range(config.num_layers)])
 
         #Final Output Head
         self.lnf=nn.LayerNorm(config.dim)

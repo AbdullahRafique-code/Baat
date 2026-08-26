@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset,DataLoader
 import numpy as np
-import model_config
 
 class BaatDataset(Dataset):
     def __init__(self,bin_path,seq_len=1024):
