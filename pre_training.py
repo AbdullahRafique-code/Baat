@@ -12,14 +12,14 @@ from dataloaders import get_dataloader
 
 #Parameters 
  
-warmup_steps= 10 #2000 # slowly increasing to LR prevent rndm weigt breakingm (as random at start)
+warmup_steps= 10 # nano model test #2000 # slowly increasing to LR prevent rndm weigt breakingm (as random at start)
 max_lr=5e-4
 min_lr=5e-5
 batch_size=2 # 4 for testing on my machine : 32 for training actually 
-context_length=1024
+context_length=128 # nano model test
 Grad_cl=1.0 # to prevent mathemtiacal exp, gradient vanisihng
 checkpoint_dir="checkpoints"
-max_steps=50 #4_200_000_000//(batch_size*context_length) # 4B tok (/32 batchsize*1024 context length)
+max_steps=50 # nano model test  #4_200_000_000//(batch_size*context_length) # 4B tok (/32 batchsize*1024 context length)
 #Roughly 128173
 
 #cosaine decay and LR
