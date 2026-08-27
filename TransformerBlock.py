@@ -9,7 +9,7 @@ class TransformerBlock(nn.Module):
         super().__init__()
 
         #layerNorm
-        self.ln1=LayerNorm(config.dim) #768
+        self.ln1=LayerNorm(config) #768
 
         # using our own custom MultiAttentionHead
         self.attn=MultiAttentionHead(dim_in=config.dim,dim_out=config.dim,
@@ -17,7 +17,7 @@ class TransformerBlock(nn.Module):
                                     num_heads=config.num_heads)
 
         #LayerNorm again
-        self.ln2=LayerNorm(config.dim)
+        self.ln2=LayerNorm(config)
 
         #feedforward MLP
         self.mlp=FeedForward(config)

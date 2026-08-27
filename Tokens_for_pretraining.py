@@ -18,12 +18,15 @@ def valid_text(iterator,key):
 def write_tokens_to_bin(filename,target_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token):
     tokens_written =0
     start_time=time.time()
+    last_tok_written=0
+
     
-    print("starting the process for {filename} ")
+    print(f"starting the process for {filename} ")
         
     with open (filename,"wb") as f:
         while tokens_written<target_tokens:
             chunk_tokens=[]
+
     
             #70% Formal urdu
             for _ in range(70):
@@ -51,13 +54,12 @@ def write_tokens_to_bin(filename,target_tokens,urdu_iter,rom_iter,eng_iter,token
             tokens_written+=len(chunk_tokens)
     
             #printing every 1M successfull pass
-            last_tok_written=0
             if tokens_written-last_tok_written >= 1000000:
                 elapsed=time.time()-start_time
                 print(f"Progress update: {tokens_written/1000000:.1f}M out of 2B tokens.| Time elapsed {elapsed:.1f}s")
                 last_tok_written=tokens_written
     
-            print(f"Data Prep completed for {filename}, Final Token count: {tokens_written}")
+        print(f"Data Prep completed for {filename}, Final Token count: {tokens_written}")
 
 # preparing the dataset
 def prepare_dataset():
@@ -69,13 +71,14 @@ def prepare_dataset():
     rom_iter=iter(load_dataset("Khubaib01/RomanUrdu-NLP-Sentiment-Corpus", split="train", streaming=True))
     eng_iter=iter(load_dataset("HuggingFaceFW/fineweb-edu", name="CC-MAIN-2024-10", split="train", streaming=True))
 
-    # gonig for 2B tokens because of the chinchilla Scaling Laws, as the arch is 110 approx so means 110Mx20=2B approx
-    # split as 20 mil for val and 1.98B for actual training
-    # val for the first 20M
-    val_tokens=20_000_000
+    # gonig for 4.2B tokens because of the chinchilla Scaling Laws, as the arch is approx 210 now10 approx so means 210Mx20=2B approx
+    # split as 40 mil for val and 4.16B for actual training
+    # val 
+
+    val_tokens=100_000 # 40_000_000 #40M tokens for validation
     write_tokens_to_bin("val.bin",val_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
     # training
-    train_tokens=1_980_000_000
+    train_tokens=500_000 # 4_160_000_000 # 4.16B tokens for training (total 4.2B tokens)
     write_tokens_to_bin("train.bin",train_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
   
 
