@@ -75,10 +75,10 @@ def prepare_dataset():
     # split as 40 mil for val and 4.16B for actual training
     # val 
 
-    val_tokens=100_000 # 40_000_000 #40M tokens for validation
+    val_tokens=40_000_000 # 100_000 # 40_000_000 #40M tokens for validation
     write_tokens_to_bin("val.bin",val_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
     # training
-    train_tokens=500_000 # 4_160_000_000 # 4.16B tokens for training (total 4.2B tokens)
+    train_tokens=4_160_000_000 # 500_000 # 4.16B tokens for training (total 4.2B tokens)
     write_tokens_to_bin("train.bin",train_tokens,urdu_iter,rom_iter,eng_iter,tokenizer,eot_token)
   
 

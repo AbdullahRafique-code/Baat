@@ -5,10 +5,10 @@ import torch.nn as nn
 @dataclass
 class BaatConfig:
     vocab_size:int =32000
-    dim:int = 256 # nano model test  #1024 # increased from 768
-    num_layers:int = 4# nano model test #14 # prev 12
-    num_heads:int =4 # nano model test  #16 # prev 12 (1024/16=64 dim per head)
-    context_length:int =128 # nano model test  # 1024 context length
+    dim:int = 1024# 256 # nano model test  #1024 # increased from 768
+    num_layers:int = 14# 4# nano model test #14 # prev 12
+    num_heads:int =16# 4 # nano model test  #16 # prev 12 (1024/16=64 dim per head)
+    context_length:int =1024#128 # nano model test  # 1024 context length
     dropout:float =0.1
 
 # size calc
