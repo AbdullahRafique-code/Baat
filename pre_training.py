@@ -19,8 +19,8 @@ batch_size=32 # 2 for testing on my machine : 32 for training actually
 context_length=1024 #128 nano model test
 Grad_cl=1.0 # to prevent mathemtiacal exp, gradient vanisihng
 checkpoint_dir="checkpoints"
-max_steps= 4_200_000_000//(batch_size*context_length) #50 # nano model test  # # 4B tok (/32 batchsize*1024 context length)
-#Roughly 128173
+max_steps= 2_200_000_000//(batch_size*context_length) #50 # nano model test  # # 2.2B tok (/32 batchsize*1024 context length)
+#Roughly 67138
 
 #cosaine decay and LR
 def get_lr(step):
