@@ -61,6 +61,14 @@ def evaluate(model, val_loader, device,ptdtype,eval_iters=100):
 
 # Hardware check and device selection
 def train():
+     # to have reproducible results, when restarting, setting seed for
+     #  random numbergeberator
+    torch.manual_seed(1337)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(1337)
+        
+
     device=torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")    
 
