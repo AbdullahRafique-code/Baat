@@ -18,7 +18,7 @@ class BaatDataset(Dataset):
     def __getitem__(self,idx):
 
         actual_idx = self.start_sample + idx
-        start=idx *self.context_length
+        start=actual_idx *self.context_length
         end=start+self.context_length+1
     
         chunk=torch.from_numpy(self.data[start:end].astype(np.int64))
@@ -32,7 +32,7 @@ class BaatDataset(Dataset):
 def get_dataloader(bin_path,batch_size=32,context_length=1024,num_workers=4,start_sample=0):
     dataset=BaatDataset(bin_path,context_length=context_length,start_sample=start_sample)
 
-    loader= DataLoader(dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers,
+    loader= DataLoader(dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers,
     pin_memory=True,drop_last=True)
     return loader
 

@@ -1,6 +1,7 @@
 # Chosing to make own version of the Multi Attention Head
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class MultiAttentionHead(nn.Module):
     def __init__(self, dim_in, dim_out,context_length,dropout,num_heads,qkv_bias=False):
@@ -28,21 +29,30 @@ class MultiAttentionHead(nn.Module):
         values=values.view(b,num_tokens,self.num_heads,self.head_dim).transpose(1,2)
 
         #calculate attention scores
-        attn_scores=queries@keys.transpose(2,3)
+        # using fused attention scores calculation now 
+        #attn_scores=queries@keys.transpose(2,3)
 
-        mask_bool=self.mask.bool()[:num_tokens,:num_tokens] # mask turncates to num tokens at current elvel
+        #mask_bool=self.mask.bool()[:num_tokens,:num_tokens] # mask turncates to num tokens at current elvel
 
-        atten_scores_masked=attn_scores.masked_fill(mask_bool,-torch.inf)
+        #atten_scores_masked=attn_scores.masked_fill(mask_bool,-torch.inf)
 
-        atten_weights=torch.softmax(atten_scores_masked/keys.shape[-1]**0.5,dim=-1)
+        #atten_weights=torch.softmax(atten_scores_masked/keys.shape[-1]**0.5,dim=-1)
 
-        atten_weights=self.dropout(atten_weights)
+        #atten_weights=self.dropout(atten_weights)
 
         #context vector
-        context_vector=(atten_weights@values).transpose(1,2)
+        #context_vector=(atten_weights@values).transpose(1,2)
 
-        context_vector=context_vector.contiguous().view(b,num_tokens,self.dim_out)
+        #context_vector=context_vector.contiguous().view(b,num_tokens,self.dim_out)
 
+        # fused attention calculation
+        context_vector=F.scaled_dot_product_attention(
+            queries,keys,values, is_causal=True,
+            dropout_p=self.dropout.p if self.training else 0.0
+        )
         # final output projection
-        context_vector=self.out_proj(context_vector)
-        return context_vector
+        #context_vector=self.out_proj(context_vector)
+        #reshaping
+        context_vector=context_vector.transpose(1,2).contiguous().view(b,num_tokens,self.dim_out)
+
+        return self.out_proj(context_vector)

@@ -12,11 +12,11 @@ from dataloaders import get_dataloader
 
 #Parameters 
  
-warmup_steps= 2000# 10 # nano model test #2000 # slowly increasing to LR prevent rndm weigt breakingm (as random at start)
+warmup_steps=2000# 10 # nano model test #2000 # slowly increasing to LR prevent rndm weigt breakingm (as random at start)
 max_lr=5e-4
 min_lr=5e-5
-batch_size=32 # 2 for testing on my machine : 32 for training actually 
-context_length=1024 #128 nano model test
+batch_size= 32 # 2 for testing on my machine : 32 for training actually 
+context_length= 1024 #128 nano model test
 Grad_cl=1.0 # to prevent mathemtiacal exp, gradient vanisihng
 checkpoint_dir="checkpoints"
 max_steps= 2_200_000_000//(batch_size*context_length) #50 # nano model test  # # 2.2B tok (/32 batchsize*1024 context length)
@@ -91,12 +91,22 @@ def train():
     else:
         print("Model compilation not supported on this device. Proceeding without compilation.")
 
+# Separate 2D weight matrices (decayed) from 1D biases and LayerNorm parameters (no decay)
+    decay_params = [p for n, p in model.named_parameters() if p.requires_grad and p.dim() >= 2]
+    nodecay_params = [p for n, p in model.named_parameters() if p.requires_grad and p.dim() < 2]
+
+    optim_groups = [
+        {"params": decay_params, "weight_decay": 0.1},
+        {"params": nodecay_params, "weight_decay": 0.0},
+    ]
+
     #optimizer
     optimizer=torch.optim.AdamW(
-        model.parameters(),
+        optim_groups,
         lr=max_lr,
         weight_decay=0.1,
-        betas=(0.9,0.95)
+        betas=(0.9,0.95),
+        fused=True if cuda_cap[0] >= 8 else False
     )
 
     scalar = torch.amp.GradScaler(device.type, enabled=use_scaler)
@@ -124,12 +134,15 @@ def train():
     train_loader=get_dataloader(bin_path="train.bin", 
                                 batch_size=batch_size, 
                                 context_length=context_length,
-                                num_workers=4) # get dataloader
+                                num_workers=4,
+                                start_sample=start_step * batch_size) # get dataloader
 
     val_loader=get_dataloader(bin_path="val.bin",
                               batch_size=batch_size,
                               context_length=context_length,
-                              num_workers=2) # get val dataloader
+                              num_workers=2,
+                              start_sample=0
+                              ) # get val dataloader
     
     model.train() # set model to training mode
 
@@ -144,24 +157,6 @@ def train():
 
         t0=time.time() # track time for each step
 
-        # validation check every 1000 steps
-        if step>0 and step%1000==0:
-         val_loss=evaluate(model,val_loader,device,floattype)
-         print(f"Step: {step:05d}, Validation Loss: {val_loss:.4f}")
-
-            
-
-         # checkpoint saving every 1000 steps
-         checkpoint_path=os.path.join(checkpoint_dir,f"baat_model_step_{step:05d}.pth")
-         raw_model=model._orig_mod if hasattr(model,"_orig_mod")else model # for compiled model
-         torch.save({
-             "step":step,
-             "model_state_dict":raw_model.state_dict(),
-             "optimizer_state_dict":optimizer.state_dict(),
-             "loss":loss.item(),
-             "val_loss":val_loss
-         },checkpoint_path)
-         print(f"Checkpoint saved at step {step} to {checkpoint_path}")
         
         #setting the lr for step
         lr=get_lr(step)
@@ -202,7 +197,24 @@ def train():
         if step%10==0:
             print(f"Step: {step:05d}, Loss: {loss.item():.4f}, LR: {lr:.6f}, Time/Step: {dt:.2f}ms, Tokens/sec: {tokens_per_sec:.2f}")
 
-
+     # validation check every 1000 steps
+        if step>0 and step%1000==0:
+            val_loss=evaluate(model,val_loader,device,floattype)
+            print(f"Step: {step:05d}, Validation Loss: {val_loss:.4f}")
+    
+                
+    
+         # checkpoint saving every 1000 steps
+            checkpoint_path=os.path.join(checkpoint_dir,f"baat_model_step_{step:05d}.pth")
+            raw_model=model._orig_mod if hasattr(model,"_orig_mod")else model # for compiled model
+            torch.save({
+             "step":step,
+             "model_state_dict":raw_model.state_dict(),
+             "optimizer_state_dict":optimizer.state_dict(),
+             "loss":loss.item(),
+             "val_loss":val_loss
+             },checkpoint_path)
+            print(f"Checkpoint saved at step {step} to {checkpoint_path}")
 
         step+=1 # increment step
 
